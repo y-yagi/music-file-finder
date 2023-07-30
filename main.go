@@ -16,6 +16,7 @@ const cmd = "music-file-finder"
 var (
 	flags    *flag.FlagSet
 	location string
+	debug    bool
 )
 
 func main() {
@@ -25,7 +26,8 @@ func main() {
 
 func setFlags() {
 	flags = flag.NewFlagSet(cmd, flag.ExitOnError)
-	flags.StringVar(&location, "l", ".", "Search location.")
+	flags.StringVar(&location, "l", ".", "Search location")
+	flags.BoolVar(&debug, "d", false, "Enable debug mode")
 	flags.Usage = usage
 }
 
@@ -90,5 +92,8 @@ func isMusicFile(path string, errSteam io.Writer) bool {
 	}
 
 	contentType := http.DetectContentType(buf)
+	if debug && !strings.HasPrefix(contentType, "audio") {
+		fmt.Fprintf(errSteam, "Not audio file: '%s' is '%s'\n", path, contentType)
+	}
 	return strings.HasPrefix(contentType, "audio")
 }
