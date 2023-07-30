@@ -1,0 +1,108 @@
+package main
+
+import (
+	"flag"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+)
+
+const cmd = "music-file-finder"
+
+var (
+	flags    *flag.FlagSet
+	location string
+)
+
+func main() {
+	setFlags()
+	os.Exit(run(os.Args, os.Stdout, os.Stderr))
+}
+
+func setFlags() {
+	flags = flag.NewFlagSet(cmd, flag.ExitOnError)
+	flags.StringVar(&location, "l", ".", "Search location.")
+	flags.Usage = usage
+}
+
+func usage() {
+	fmt.Fprintf(os.Stdout, "Usage: %s [OPTIONS]\n\n", cmd)
+	fmt.Fprintln(os.Stdout, "OPTIONS:")
+	flags.PrintDefaults()
+}
+
+func run(args []string, outStream, errStream io.Writer) int {
+	var wg sync.WaitGroup
+
+	flags.Parse(args[1:])
+	entries, err := os.ReadDir(location)
+	if err != nil {
+		fmt.Fprintf(outStream, "Location is invalid value. %v\n", err)
+		return 1
+	}
+
+	for _, entry := range entries {
+		info, err := entry.Info()
+		if err != nil {
+			fmt.Fprintf(outStream, "%v\n", err)
+		}
+
+		fullPath := filepath.Join(location, info.Name())
+		if info.IsDir() {
+			wg.Add(1)
+			go func() {
+				search(fullPath, outStream)
+				wg.Done()
+			}()
+		} else if isMusicFile(fullPath, outStream) {
+			fmt.Fprintf(outStream, "%s\n", fullPath)
+		}
+	}
+	wg.Wait()
+
+	return 0
+}
+
+func search(location string, outStream io.Writer) {
+	entries, err := os.ReadDir(location)
+	if err != nil {
+		fmt.Fprintf(outStream, "%v\n", err)
+		return
+	}
+
+	for _, entry := range entries {
+		info, err := entry.Info()
+		if err != nil {
+			fmt.Fprintf(outStream, "%v\n", err)
+		}
+
+		fullPath := filepath.Join(location, info.Name())
+		if info.IsDir() {
+			search(fullPath, outStream)
+		} else if isMusicFile(fullPath, outStream) {
+			fmt.Fprintf(outStream, "%s\n", fullPath)
+		}
+	}
+}
+
+func isMusicFile(path string, outSteam io.Writer) bool {
+	file, err := os.Open(path)
+	if err != nil {
+		fmt.Fprintf(outSteam, "file open failed %s, %v\n", path, err)
+		return false
+	}
+	defer file.Close()
+
+	buf := make([]byte, 512)
+	if _, err := file.Read(buf); err != nil {
+		fmt.Fprintf(outSteam, "file read failed %s, %v\n", path, err)
+		return false
+	}
+
+	contentType := http.DetectContentType(buf)
+	return strings.HasPrefix(contentType, "audio")
+}
