@@ -55,10 +55,10 @@ func run(args []string, outStream, errStream io.Writer) int {
 		if info.IsDir() {
 			wg.Add(1)
 			go func() {
-				search(fullPath, outStream)
+				search(fullPath, outStream, errStream)
 				wg.Done()
 			}()
-		} else if isMusicFile(fullPath, outStream) {
+		} else if isMusicFile(fullPath, errStream) {
 			fmt.Fprintf(outStream, "%s\n", fullPath)
 		}
 	}
@@ -67,7 +67,7 @@ func run(args []string, outStream, errStream io.Writer) int {
 	return 0
 }
 
-func search(location string, outStream io.Writer) {
+func search(location string, outStream, errStream io.Writer) {
 	entries, err := os.ReadDir(location)
 	if err != nil {
 		fmt.Fprintf(outStream, "%v\n", err)
@@ -82,24 +82,24 @@ func search(location string, outStream io.Writer) {
 
 		fullPath := filepath.Join(location, info.Name())
 		if info.IsDir() {
-			search(fullPath, outStream)
-		} else if isMusicFile(fullPath, outStream) {
+			search(fullPath, outStream, errStream)
+		} else if isMusicFile(fullPath, errStream) {
 			fmt.Fprintf(outStream, "%s\n", fullPath)
 		}
 	}
 }
 
-func isMusicFile(path string, outSteam io.Writer) bool {
+func isMusicFile(path string, errSteam io.Writer) bool {
 	file, err := os.Open(path)
 	if err != nil {
-		fmt.Fprintf(outSteam, "file open failed %s, %v\n", path, err)
+		fmt.Fprintf(errSteam, "file open failed %s, %v\n", path, err)
 		return false
 	}
 	defer file.Close()
 
 	buf := make([]byte, 512)
 	if _, err := file.Read(buf); err != nil {
-		fmt.Fprintf(outSteam, "file read failed %s, %v\n", path, err)
+		fmt.Fprintf(errSteam, "file read failed %s, %v\n", path, err)
 		return false
 	}
 
