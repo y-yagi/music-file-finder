@@ -36,13 +36,23 @@ func usage() {
 }
 
 func run(args []string, outStream, errStream io.Writer) int {
-	var wg sync.WaitGroup
-
 	flags.Parse(args[1:])
-	entries, err := os.ReadDir(location)
-	if err != nil {
+	if _, err := os.Stat(location); err != nil {
 		fmt.Fprintf(outStream, "Location is invalid value. %v\n", err)
 		return 1
+	}
+
+	search(location, outStream, errStream)
+	return 0
+}
+
+func search(location string, outStream, errStream io.Writer) {
+	var wg sync.WaitGroup
+
+	entries, err := os.ReadDir(location)
+	if err != nil {
+		fmt.Fprintf(outStream, "%v\n", err)
+		return
 	}
 
 	for _, entry := range entries {
@@ -63,30 +73,6 @@ func run(args []string, outStream, errStream io.Writer) int {
 		}
 	}
 	wg.Wait()
-
-	return 0
-}
-
-func search(location string, outStream, errStream io.Writer) {
-	entries, err := os.ReadDir(location)
-	if err != nil {
-		fmt.Fprintf(outStream, "%v\n", err)
-		return
-	}
-
-	for _, entry := range entries {
-		info, err := entry.Info()
-		if err != nil {
-			fmt.Fprintf(outStream, "%v\n", err)
-		}
-
-		fullPath := filepath.Join(location, info.Name())
-		if info.IsDir() {
-			search(fullPath, outStream, errStream)
-		} else if isMusicFile(fullPath, errStream) {
-			fmt.Fprintf(outStream, "%s\n", fullPath)
-		}
-	}
 }
 
 func isMusicFile(path string, errSteam io.Writer) bool {
