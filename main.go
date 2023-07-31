@@ -4,11 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
+
+	"github.com/h2non/filetype"
 )
 
 const cmd = "music-file-finder"
@@ -85,15 +85,15 @@ func isMusicFile(path string, errSteam io.Writer) bool {
 	}
 	defer file.Close()
 
-	buf := make([]byte, 512)
+	// We only have to pass the file header = first 261 bytes
+	buf := make([]byte, 261)
 	if _, err := file.Read(buf); err != nil {
 		fmt.Fprintf(errSteam, "file read failed %s, %v\n", path, err)
 		return false
 	}
 
-	contentType := http.DetectContentType(buf)
-	if debug && !strings.HasPrefix(contentType, "audio") {
-		fmt.Fprintf(errSteam, "Not audio file: '%s' is '%s'\n", path, contentType)
+	if debug && !filetype.IsAudio(buf) {
+		fmt.Fprintf(errSteam, "Not audio file: '%s'\n", path)
 	}
-	return strings.HasPrefix(contentType, "audio")
+	return filetype.IsAudio(buf)
 }
