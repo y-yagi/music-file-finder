@@ -71,7 +71,7 @@ func search(location string, outStream, errStream io.Writer) {
 				wg.Done()
 			}()
 		} else if isMusicFile(fullPath, errStream) {
-			fmt.Fprintf(outStream, "%s\n", fullPath)
+			fmt.Fprintln(outStream, fullPath)
 		}
 	}
 	wg.Wait()
