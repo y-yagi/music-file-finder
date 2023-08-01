@@ -92,8 +92,9 @@ func isMusicFile(path string, errSteam io.Writer) bool {
 		return false
 	}
 
-	if debug && !filetype.IsAudio(buf) {
+	isAudio := filetype.IsAudio(buf)
+	if debug && !isAudio {
 		fmt.Fprintf(errSteam, "Not audio file: '%s'\n", path)
 	}
-	return filetype.IsAudio(buf)
+	return isAudio
 }
