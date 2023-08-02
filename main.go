@@ -61,6 +61,7 @@ func search(location string, outStream, errStream io.Writer) {
 		info, err := entry.Info()
 		if err != nil {
 			fmt.Fprintf(outStream, "%v\n", err)
+			continue
 		}
 
 		fullPath := filepath.Join(location, info.Name())
