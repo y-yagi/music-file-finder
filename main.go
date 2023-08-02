@@ -71,14 +71,14 @@ func search(location string, outStream, errStream io.Writer) {
 				search(fullPath, outStream, errStream)
 				wg.Done()
 			}()
-		} else if isMusicFile(fullPath, errStream) {
+		} else if isAudioFile(fullPath, errStream) {
 			fmt.Fprintln(outStream, fullPath)
 		}
 	}
 	wg.Wait()
 }
 
-func isMusicFile(path string, errSteam io.Writer) bool {
+func isAudioFile(path string, errSteam io.Writer) bool {
 	file, err := os.Open(path)
 	if err != nil {
 		fmt.Fprintf(errSteam, "file open failed %s, %v\n", path, err)
