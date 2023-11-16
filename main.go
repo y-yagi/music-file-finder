@@ -17,6 +17,7 @@ var (
 	flags    *flag.FlagSet
 	location string
 	debug    bool
+	silence  bool
 )
 
 func main() {
@@ -28,6 +29,7 @@ func setFlags() {
 	flags = flag.NewFlagSet(cmd, flag.ExitOnError)
 	flags.StringVar(&location, "l", ".", "Search location")
 	flags.BoolVar(&debug, "d", false, "Enable debug mode")
+	flags.BoolVar(&silence, "silence", false, "Don't show an error message")
 	flags.Usage = usage
 }
 
@@ -80,7 +82,7 @@ func search(location string, outStream, errStream io.Writer) {
 
 func isAudioFile(path string, errSteam io.Writer) bool {
 	file, err := os.Open(path)
-	if err != nil {
+	if err != nil && !silence {
 		fmt.Fprintf(errSteam, "file open failed %s, %v\n", path, err)
 		return false
 	}
@@ -88,7 +90,7 @@ func isAudioFile(path string, errSteam io.Writer) bool {
 
 	// We only have to pass the file header = first 261 bytes
 	buf := make([]byte, 261)
-	if _, err := file.Read(buf); err != nil {
+	if _, err := file.Read(buf); err != nil && !silence {
 		fmt.Fprintf(errSteam, "file read failed %s, %v\n", path, err)
 		return false
 	}
