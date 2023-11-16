@@ -80,10 +80,10 @@ func search(location string, outStream, errStream io.Writer) {
 	wg.Wait()
 }
 
-func isAudioFile(path string, errSteam io.Writer) bool {
+func isAudioFile(path string, errStream io.Writer) bool {
 	file, err := os.Open(path)
 	if err != nil && !silence {
-		fmt.Fprintf(errSteam, "file open failed %s, %v\n", path, err)
+		fmt.Fprintf(errStream, "file open failed %s, %v\n", path, err)
 		return false
 	}
 	defer file.Close()
@@ -91,13 +91,13 @@ func isAudioFile(path string, errSteam io.Writer) bool {
 	// We only have to pass the file header = first 261 bytes
 	buf := make([]byte, 261)
 	if _, err := file.Read(buf); err != nil && !silence {
-		fmt.Fprintf(errSteam, "file read failed %s, %v\n", path, err)
+		fmt.Fprintf(errStream, "file read failed %s, %v\n", path, err)
 		return false
 	}
 
 	isAudio := filetype.IsAudio(buf)
 	if debug && !isAudio {
-		fmt.Fprintf(errSteam, "Not audio file: '%s'\n", path)
+		fmt.Fprintf(errStream, "Not audio file: '%s'\n", path)
 	}
 	return isAudio
 }
